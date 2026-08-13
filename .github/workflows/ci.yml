@@ -9,49 +9,33 @@ on:
 
 jobs:
   test:
-    name: Zig tests + examples + zero-FPU gate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Zig 0.13.0 (official tarball — deterministic, no action fragility)
-        run: |
-          set -euo pipefail
-          curl -fsSL -o zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
-          tar -xf zig.tar.xz
-          echo "$PWD/zig-linux-x86_64-0.13.0" >> "$GITHUB_PATH"
-          zig version
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.13.0
 
       - name: Zero floating-point gate
         run: |
           set -euo pipefail
-          # Fail only on real floating-point tokens, ignoring comments
           HITS=$(grep -rE --include='*.zig' -n '\b(f32|f64|f128)\b' src/ examples/ build.zig | grep -v '//' || true)
           if [ -n "$HITS" ]; then
-            echo "ERROR: floating-point token detected — violates zero-FPU contract"
+            echo "ERROR: floating-point token detected"
             echo "$HITS"
             exit 1
           fi
-          echo "PASS: no floating-point tokens in Zig sources (comments ignored)"
+          echo "PASS: zero floating-point tokens"
 
-      - name: Run library unit tests
+      - name: Test
         run: zig build test --summary all
 
-      - name: Build library + examples
+      - name: Build
         run: zig build --summary all
 
-      - name: Execute examples (determinism smoke)
+      - name: Run examples
         run: |
-          set -euo pipefail
           ./zig-out/bin/basic
           ./zig-out/bin/grid_lmp_scale
-          echo "Examples executed successfully — pure integer paths confirmed"
-
-      - name: Artifact — zig-out binaries
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: kerna-exact-matrix-binaries
-          path: zig-out/
-          if-no-files-found: ignore
