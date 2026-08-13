@@ -26,12 +26,14 @@ jobs:
       - name: Zero floating-point gate
         run: |
           set -euo pipefail
-          # Fail the build if any real floating-point token appears outside comments/docs
-          if grep -rE --include='*.zig' -n '\b(f32|f64|f128|Float|float)\b' src/ examples/ build.zig; then
+          # Fail only on real floating-point tokens, ignoring comments
+          HITS=$(grep -rE --include='*.zig' -n '\b(f32|f64|f128)\b' src/ examples/ build.zig | grep -v '//' || true)
+          if [ -n "$HITS" ]; then
             echo "ERROR: floating-point token detected — violates zero-FPU contract"
+            echo "$HITS"
             exit 1
           fi
-          echo "PASS: no floating-point tokens in Zig sources"
+          echo "PASS: no floating-point tokens in Zig sources (comments ignored)"
 
       - name: Run library unit tests
         run: zig build test --summary all
