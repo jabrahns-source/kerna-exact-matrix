@@ -7,16 +7,23 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.13.0
+      - name: Install Zig 0.13.0
+        run: |
+          set -euo pipefail
+          curl -fsSL -o zig.tar.xz https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig.tar.xz
+          echo "$PWD/zig-linux-x86_64-0.13.0" >> "$GITHUB_PATH"
+          zig version
 
       - name: Zero floating-point gate
         run: |
@@ -37,5 +44,7 @@ jobs:
 
       - name: Run examples
         run: |
+          set -euo pipefail
           ./zig-out/bin/basic
           ./zig-out/bin/grid_lmp_scale
+          echo "Examples OK"
