@@ -1,0 +1,21 @@
+# Zig
+zig-cache/
+zig-out/
+.zig-cache/
+
+# Idris2
+build/
+*.ibc
+*.ttc
+*.ttm
+
+# OS / editors
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Python leftovers if used for glue
+__pycache__/
+*.pyc
+.venv/
